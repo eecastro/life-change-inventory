@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Life Change Inventory for First-Year Students</title>
+<!--
+  Adapted from the Holmes-Rahe Social Readjustment Rating Scale (1967).
+  Self-contained: no external fonts, scripts, analytics, cookies, or storage.
+  Nothing a student checks ever leaves their browser tab.
+
+  ===== INSTRUCTOR SETUP (2 lines, near the bottom in the <script>) =====
+  FORM_URL         -> paste your Google Form link
+  FORM_SCORE_ENTRY -> optional; prefills the score question
+-->
+<style>
+  :root {
+    --paper: #E8EDF2;
+    --surface: #FFFFFF;
+    --ink: #1C2740;
+    --muted: #556079;
+    --line: #CBD4DE;
+    --row-on: #EAF1FB;
+    --low: #2C8A75;
+    --mid: #C98A10;
+    --high: #B23A48;
+    --focus: #2D5BD3;
+
+    --display: Rockwell, "Rockwell Nova", "Roboto Slab", "DejaVu Serif", "Sitka Small", Georgia, serif;
+    --body: Seravek, "Gill Sans Nova", Ubuntu, Calibri, "DejaVu Sans", "Segoe UI", system-ui, sans-serif;
+
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #121826;
+      --surface: #1B2334;
+      --ink: #E6ECF5;
+      --muted: #A4AFC3;
+      --line: #2E3A52;
+      --row-on: #22304A;
+      --low: #4DBFA5;
+      --mid: #E8B03F;
+      --high: #E0697A;
+      --focus: #8FB0FF;
+    }
+  }
+  *, *::before, *::after { box-sizing: inherit; }
+  [hidden] { display: none !important; }
+  html { scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 5rem); }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 1.0625rem;
+    line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
+  }
+  .wrap { max-width: 46rem; margin: 0 auto; padding: 0 1.25rem; }
+
+  /* ---------- Header ---------- */
+  header.intro { padding: 3rem 0 1.5rem; }
+  h1 {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(2rem, 6vw, 2.9rem);
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+    margin: 0 0 0.75rem;
+    max-width: 18ch;
+  }
+  .lede { font-size: 1.15rem; margin: 0 0 1.25rem; max-width: 38rem; }
+  .fine { color: var(--muted); font-size: 0.95rem; max-width: 38rem; margin: 0 0 0.6rem; }
+  .privacy {
+    display: flex; gap: 0.6rem; align-items: flex-start;
+    border-left: 3px solid var(--low);
+    padding: 0.2rem 0 0.2rem 0.85rem;
+    margin: 1.25rem 0 0;
+    font-size: 0.95rem;
+    max-width: 38rem;
+  }
+
+  /* ---------- Sticky checkmark counter ---------- */
+  .meter {
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    z-index: 5;
+    background: var(--paper);
+    border-bottom: 1px solid var(--line);
+    padding: 0.75rem 0;
+  }
+  .meter-total {
+    font-family: var(--display);
+    font-size: 2.1rem;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .meter-total small { font-family: var(--body); font-size: 0.95rem; font-weight: 400; color: var(--muted); margin-left: 0.35rem; }
+
+  /* ---------- Checklist ---------- */
+  main { padding: 1.75rem 0 1rem; }
+  h2 {
+    font-family: var(--display);
+    font-size: 1.45rem;
+    line-height: 1.2;
+    margin: 0 0 0.35rem;
+  }
+  .instructions { margin: 0 0 1rem; color: var(--muted); }
+  fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+  legend { padding: 0; }
+  ol.items { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  ol.items li + li { border-top: 1px solid var(--line); }
+  label.item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 0.85rem;
+    align-items: start;
+    padding: 0.8rem 1rem;
+    cursor: pointer;
+  }
+  label.item:hover { background: var(--row-on); }
+  label.item:has(input:checked) { background: var(--row-on); }
+  label.item input {
+    width: 1.3rem; height: 1.3rem; margin: 0.12rem 0 0;
+    accent-color: var(--focus);
+    cursor: pointer;
+  }
+  .item-num { color: var(--muted); font-variant-numeric: tabular-nums; margin-right: 0.35rem; }
+  .pts {
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+    font-size: 0.95rem;
+    min-width: 2.5ch; text-align: right;
+    padding-top: 0.08rem;
+  }
+  label.item:has(input:checked) .pts { color: var(--ink); font-weight: 700; }
+
+  /* ---------- Buttons ---------- */
+  .actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 1.5rem 0 0; }
+  button, .btn {
+    font: inherit;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 0.75rem 1.25rem;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 2.9rem;
+  }
+  .btn-primary { background: var(--ink); color: var(--paper); border: 2px solid var(--ink); }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-quiet { background: transparent; color: var(--ink); border: 2px solid var(--line); }
+  .btn-quiet:hover { border-color: var(--ink); }
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+  label.item:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: -3px; }
+  label.item input:focus-visible { outline: none; }
+
+  /* ---------- Results ---------- */
+  #results { padding: 2.5rem 0 1rem; }
+  #results[hidden] { display: none; }
+  .score-line { display: flex; align-items: baseline; gap: 0.9rem; flex-wrap: wrap; margin: 0.5rem 0 0.25rem; }
+  .score-big {
+    font-family: var(--display);
+    font-size: clamp(3.5rem, 14vw, 5.5rem);
+    font-weight: 700;
+    line-height: 0.95;
+    font-variant-numeric: tabular-nums;
+  }
+  .zone-name { font-size: 1.2rem; font-weight: 700; }
+  .zone-range { color: var(--muted); font-size: 0.95rem; margin: 0 0 1.25rem; }
+  .explain p { margin: 0 0 0.9rem; max-width: 40rem; }
+  .explain .research { font-weight: 700; }
+
+  .log {
+    margin: 2rem 0 0;
+    padding: 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+  }
+  .log h3 { font-family: var(--display); font-size: 1.2rem; margin: 0 0 0.5rem; }
+  .log ol { margin: 0 0 1rem; padding-left: 1.25rem; }
+  .log li { margin-bottom: 0.3rem; }
+  .copy-status { min-height: 1.5em; color: var(--low); font-size: 0.95rem; margin: 0.5rem 0 0; }
+
+  .ranges { margin: 2.25rem 0 0; }
+  .ranges h3 { font-family: var(--display); font-size: 1.2rem; margin: 0 0 0.6rem; }
+  .ranges dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 0.4rem 1rem; }
+  .ranges dt { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .ranges dd { margin: 0; color: var(--muted); }
+
+  footer { padding: 2rem 0 3rem; color: var(--muted); font-size: 0.88rem; }
+  footer p { margin: 0 0 0.6rem; max-width: 40rem; }
+
+  @media (max-width: 520px) {
+    header.intro { padding-top: 2rem; }
+    label.item { padding: 0.75rem 0.8rem; gap: 0.7rem; }
+    .meter-total { font-size: 1.8rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="intro">
+    <h1>How much has your life changed this year?</h1>
+    <p class="lede">A checklist of 43 life events, from big losses to good news, adapted for first-year college students. It takes about five minutes.</p>
+    <p class="fine">Based on the Holmes-Rahe Social Readjustment Rating Scale (1967). The point values are the originals; the wording has been updated for students. This is a reflection tool, not a medical or psychological diagnosis.</p>
+    <p class="privacy">This page doesn't save, send, or track anything. Your checkmarks stay in this browser tab and disappear when you close it.</p>
+  </header>
+</div>
+
+<div class="meter" aria-label="Events checked">
+  <div class="wrap">
+    <div class="meter-total"><span id="liveCount" aria-live="polite">0</span><small>of 43 events checked</small></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <main>
+    <fieldset>
+      <legend><h2>Check every event that happened to you in the past 12 months</h2></legend>
+      <p class="instructions">If an event happened more than once, check it once. Skip anything that doesn't apply.</p>
+      <ol class="items" id="items"></ol>
+    </fieldset>
+
+    <div class="actions">
+      <button type="button" class="btn-primary" id="showBtn">See my results</button>
+      <button type="button" class="btn-quiet" id="resetBtn">Clear my answers</button>
+    </div>
+
+    <section id="results" hidden aria-labelledby="resultsHeading">
+      <h2 id="resultsHeading" tabindex="-1">Your results</h2>
+      <div class="score-line">
+        <span class="score-big" id="scoreBig">0</span>
+        <span class="zone-name" id="zoneName"></span>
+      </div>
+      <p class="zone-range" id="zoneRange"></p>
+      <div class="explain" id="explain"></div>
+
+      <div class="log">
+        <h3>Log your score</h3>
+        <ol>
+          <li>Copy your score: <strong id="scoreInline">0</strong>.</li>
+          <li id="formStep">Open the score form and enter only the number. The form doesn't ask for your name.</li>
+        </ol>
+        <div class="actions" style="margin-top:0">
+          <button type="button" class="btn-primary" id="copyBtn">Copy score</button>
+          <a class="btn btn-quiet" id="formLink" href="#" target="_blank" rel="noopener">Open the score form</a>
+        </div>
+        <p class="copy-status" id="copyStatus" role="status"></p>
+      </div>
+
+      <div class="ranges">
+        <h3>All score ranges</h3>
+        <dl>
+          <dt>0–150</dt><dd>Relatively low amount of life change</dd>
+          <dt>151–299</dt><dd>Moderate to high amount of life change</dd>
+          <dt>300+</dt><dd>Very high amount of life change</dd>
+        </dl>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Source: Holmes, T. H., &amp; Rahe, R. H. (1967). The Social Readjustment Rating Scale. <i>Journal of Psychosomatic Research, 11</i>(2), 213–218. Item wording adapted for first-year college students; this adapted version has not been separately validated.</p>
+    <p>We all need help sometimes. Reach out for confidential crisis counseling support by calling 988 or texting 741741.</p>
+  </footer>
+</div>
+
+<script>
+/* ===================== INSTRUCTOR SETUP ===================== */
+// 1. Paste your Google Form's link between the quotes.
+//    Leave it empty ("") to hide the button and show a "your instructor will share the link" note.
+const FORM_URL = "";
+
+// 2. OPTIONAL: prefill the score question. In Google Forms choose
+//    ⋮ > "Get pre-filled link", type any number in the score question, click "Get link",
+//    then copy the part that looks like  entry.123456789  and paste it here.
+//    With this set, FORM_URL should be the form's normal ".../viewform" link.
+const FORM_SCORE_ENTRY = "";
+/* ============================================================ */
+
+// [wording for first-year students, original Holmes-Rahe point value]
+const ITEMS = [
+  ["Death of a parent, sibling, or romantic partner", 100],
+  ["Break-up of a serious, long-term romantic relationship", 73],
+  ["Separation from a boyfriend, girlfriend, or partner (e.g., going long-distance or “taking a break”)", 65],
+  ["Being held in jail, juvenile detention, or another institution", 63],
+  ["Death of a close family member (e.g., a grandparent, aunt, uncle, or cousin)", 63],
+  ["Major personal injury or illness (including a concussion, surgery, or a mental-health crisis)", 53],
+  ["Committing to a serious relationship (e.g., moving in together, getting engaged, or getting married)", 50],
+  ["Being fired from a job, or cut from a team, program, or campus position", 47],
+  ["Getting back together with a boyfriend, girlfriend, or partner after a break-up", 45],
+  ["Leaving behind something that defined you (e.g., ending a sport, activity, or job you did for years)", 45],
+  ["Major change in the health or behavior of a family member (including parents separating or divorcing)", 44],
+  ["Pregnancy or a pregnancy scare (yours or a partner’s)", 40],
+  ["Sexual difficulties or worries", 39],
+  ["A new family member at home (e.g., a new sibling, step-parent, or step-siblings, or a relative moving in)", 39],
+  ["Major academic setback (e.g., academic probation, or failing or withdrawing from a key course)", 39],
+  ["Major change in your financial situation (e.g., losing financial aid or a scholarship, a family money crisis, or having a lot more money than usual)", 38],
+  ["Death of a close friend", 37],
+  ["Changing your major or intended career path", 36],
+  ["Major change in the number of arguments with a partner, roommate, or parent (a lot more or a lot less than usual)", 35],
+  ["Taking on major debt (e.g., signing for student loans)", 31],
+  ["Falling seriously behind on a loan or bill (e.g., a bill sent to collections, something repossessed, or a hold on your student account)", 30],
+  ["Major change in responsibilities at work, on a team, or in a club (e.g., promotion, demotion, or a new leadership role)", 29],
+  ["Leaving your family’s home, or a sibling or close friend moving away (for college, the military, or a job)", 29],
+  ["Trouble with people you live alongside but didn’t choose (a roommate, suitemates, step-family, or a partner’s family)", 29],
+  ["Outstanding personal achievement (e.g., an award, a scholarship, admission to a selective program, or a big performance or win)", 28],
+  ["A parent or partner starting or stopping work outside the home", 26],
+  ["Starting or stopping formal schooling (e.g., starting college, taking a gap year, or leaving school)", 26],
+  ["Major change in living conditions (e.g., moving into a dorm, getting a new roommate, or your family’s home being sold, remodeled, or deteriorating)", 25],
+  ["Changing personal habits (e.g., how you dress, who you hang out with, or quitting vaping or smoking)", 24],
+  ["Trouble with a boss, professor, coach, or RA", 23],
+  ["Major change in work or class hours or conditions (e.g., a much heavier course load or a new job schedule)", 20],
+  ["Moving to a new address", 20],
+  ["Transferring to a different school or campus", 20],
+  ["Major change in the usual type or amount of recreation (e.g., gaming, sports, or hobbies)", 19],
+  ["Major change in religious or spiritual activity (a lot more or a lot less than usual)", 19],
+  ["Major change in social activities (e.g., clubs, parties, going out, or visiting friends)", 18],
+  ["Taking on a smaller loan or debt (e.g., a car loan, a laptop on a payment plan, or a credit card balance)", 17],
+  ["Major change in sleeping habits (a lot more or a lot less than usual)", 16],
+  ["Major change in the number of family get-togethers (a lot more or a lot less than usual)", 15],
+  ["Major change in eating habits (a lot more or less food, or very different meal times or surroundings, like switching to a dining hall)", 15],
+  ["Vacation or a trip away (including spring break)", 13],
+  ["Major holidays (including your first holidays back home after starting college)", 12],
+  ["Minor violations of the law or campus rules (e.g., a traffic ticket, jaywalking, a noise complaint, or a conduct warning)", 11]
+];
+
+const ZONES = [
+  {
+    max: 150,
+    name: "Relatively low life change",
+    range: "Range: 0–150 points",
+    color: "var(--low)",
+    paras: [
+      "<span class=\"research\">In Holmes and Rahe’s original research, people who scored 150 or less had a relatively low amount of life change and a low susceptibility to stress-related health problems.</span>",
+      "That doesn’t mean your year has been easy. This checklist counts big life events, not everyday pressures like exams, deadlines, homesickness, or social media, and those can wear you down too.",
+      "A low score is a good moment to notice what’s keeping you steady, such as sleep, friends, routines, or time outdoors, and to protect it as the semester gets busier.",
+      "If you feel stressed anyway, that feeling is real and worth taking seriously, whatever the number says. Talking it through with a friend, an RA, or your campus counseling center can help."
+    ]
+  },
+  {
+    max: 299,
+    name: "Moderate to high life change",
+    range: "Range: 151–299 points",
+    color: "var(--mid)",
+    paras: [
+      "<span class=\"research\">In Holmes and Rahe’s original research, scores in this range were linked to about a 50% chance of a major stress-related health problem within the next two years.</span>",
+      "That figure comes from studies of adults decades ago, so treat it as a signal rather than a prediction about you. What it does tell you is that you’re carrying a real load of change.",
+      "Many first-year students land here simply because starting college stacks several big changes at once: a new home, new people, new routines, and new responsibilities.",
+      "Protect the basics that buffer stress: regular sleep, real meals, some movement, and time with people you trust. If stress starts showing up in your body or mood, like trouble sleeping, getting sick more often, or feeling overwhelmed, your campus counseling and health centers are there for exactly this, and it’s easier to get support early."
+    ]
+  },
+  {
+    max: Infinity,
+    name: "Very high life change",
+    range: "Range: 300 points or more",
+    color: "var(--high)",
+    paras: [
+      "<span class=\"research\">In Holmes and Rahe’s original research, scores of 300 or more raised the odds of a major stress-related health problem within two years to about 80%.</span>",
+      "This number doesn’t decide what will happen to you. It tells you that you’ve absorbed an unusually large amount of change in a short time, and that it makes sense to take your wellbeing seriously right now.",
+      "You don’t have to wait until things fall apart to ask for help. Reaching out to your campus counseling center, a doctor, an academic advisor, an RA, or a professor you trust is a smart, proactive step, and they can also help with practical options like adjusting your course load.",
+      "Lighten what you can: drop or postpone what isn’t essential, keep sleep and meals as regular as possible, and lean on the people around you. If you ever feel unsafe or in crisis, call or text 988 (the Suicide & Crisis Lifeline in the US) any time, day or night."
+    ]
+  }
+];
+
+const list = document.getElementById("items");
+const liveCount = document.getElementById("liveCount");
+const results = document.getElementById("results");
+
+// Build the checklist
+ITEMS.forEach(([text, pts], i) => {
+  const li = document.createElement("li");
+  const label = document.createElement("label");
+  label.className = "item";
+  const input = document.createElement("input");
+  input.type = "checkbox";
+  input.value = String(pts);
+  input.id = "e" + (i + 1);
+  const span = document.createElement("span");
+  const num = document.createElement("span");
+  num.className = "item-num";
+  num.textContent = (i + 1) + ".";
+  span.append(num, document.createTextNode(text));
+  const p = document.createElement("span");
+  p.className = "pts";
+  p.textContent = pts;
+  p.setAttribute("aria-label", pts + " points");
+  label.append(input, span, p);
+  li.append(label);
+  list.append(li);
+});
+
+function zoneFor(score) {
+  return ZONES.find(z => score <= z.max);
+}
+
+function computeScore() {
+  let total = 0, count = 0;
+  list.querySelectorAll("input:checked").forEach(cb => { total += Number(cb.value); count++; });
+  return { total, count };
+}
+
+function formHref(score) {
+  if (!FORM_URL) return "";
+  if (!FORM_SCORE_ENTRY) return FORM_URL;
+  const sep = FORM_URL.includes("?") ? "&" : "?";
+  return FORM_URL + sep + "usp=pp_url&" + encodeURIComponent(FORM_SCORE_ENTRY) + "=" + score;
+}
+
+function renderResults(score) {
+  const z = zoneFor(score);
+  document.getElementById("scoreBig").textContent = score;
+  document.getElementById("scoreBig").style.color = z.color;
+  document.getElementById("scoreInline").textContent = score;
+  document.getElementById("zoneName").textContent = z.name;
+  document.getElementById("zoneRange").textContent = z.range;
+  document.getElementById("explain").innerHTML = z.paras.map(p => "<p>" + p + "</p>").join("");
+
+  const link = document.getElementById("formLink");
+  const step = document.getElementById("formStep");
+  const href = formHref(score);
+  if (href) {
+    link.href = href;
+    link.hidden = false;
+    step.textContent = FORM_SCORE_ENTRY
+      ? "Open the score form. Your number is filled in for you; check it and submit. The form doesn't ask for your name."
+      : "Open the score form and enter only the number. The form doesn't ask for your name.";
+  } else {
+    link.hidden = true;
+    step.textContent = "Enter only the number in the score form your instructor shares with you. Don't include your name.";
+  }
+}
+
+function update() {
+  const { total, count } = computeScore();
+  liveCount.textContent = count;
+  if (!results.hidden) renderResults(total);
+}
+
+list.addEventListener("change", update);
+
+document.getElementById("showBtn").addEventListener("click", () => {
+  results.hidden = false;
+  document.getElementById("copyStatus").textContent = "";
+  renderResults(computeScore().total);
+  const h = document.getElementById("resultsHeading");
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  h.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  h.focus({ preventScroll: true });
+});
+
+document.getElementById("resetBtn").addEventListener("click", () => {
+  list.querySelectorAll("input").forEach(cb => { cb.checked = false; });
+  results.hidden = true;
+  update();
+  window.scrollTo({ top: 0 });
+  list.querySelector("input").focus({ preventScroll: true });
+});
+
+document.getElementById("copyBtn").addEventListener("click", async () => {
+  const score = String(computeScore().total);
+  const status = document.getElementById("copyStatus");
+  try {
+    await navigator.clipboard.writeText(score);
+    status.textContent = "Copied " + score + ". Paste it into the score form.";
+  } catch (e) {
+    const t = document.createElement("textarea");
+    t.value = score;
+    t.setAttribute("readonly", "");
+    t.style.position = "fixed"; t.style.opacity = "0";
+    document.body.append(t);
+    t.select();
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch (_) {}
+    t.remove();
+    status.textContent = ok
+      ? "Copied " + score + ". Paste it into the score form."
+      : "Your score is " + score + ". Type it into the score form.";
+  }
+});
+
+update();
+</script>
+</body>
+</html>
